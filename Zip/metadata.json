@@ -1,0 +1,7 @@
+{
+  "name": "Expedición al Himalaya - Maestros del Lejano Oriente",
+  "description": "Una biblioteca digital inmersiva y experiencia mística basada en la obra de Baird T. Spalding, con estética de 1894 y funcionalidades de IA.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}

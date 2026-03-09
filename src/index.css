@@ -1,0 +1,78 @@
+@import "tailwindcss";
+
+/* 1894 Expedition Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400..900&family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Lora:ital,wght@0,400..700;1,400..700&display=swap');
+
+@theme {
+    /* Typography Roles */
+    --font-display: "Cinzel", serif;
+    --font-serif: "Lora", serif;
+    --font-heading: "Playfair Display", serif;
+    --font-sans: "Inter", sans-serif;
+
+    /* 1894 Palette */
+    --color-parchment: #F4EBD0;
+    --color-parchment-light: #F9F4E8;
+    --color-parchment-dark: #E2D1A4;
+
+    --color-ink: #2C2C2C;
+    --color-ink-light: #4A4A4A;
+
+    --color-gold: #B8860B;
+    --color-gold-dim: #8B6D2D;
+    --color-gold-bright: #D4AF37;
+
+    /* Animations */
+    --animate-fade-in: fade-in 1s ease-out;
+    --animate-fade-in-up: fade-in-up 1s ease-out;
+
+    @keyframes fade-in {
+        from {
+            opacity: 0;
+        }
+
+        to {
+            opacity: 1;
+        }
+    }
+
+    @keyframes fade-in-up {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+}
+
+/* Custom Mystical Styles */
+.bg-parchment-glass {
+    background: rgba(244, 235, 208, 0.9);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(184, 134, 11, 0.3);
+}
+
+.shadow-mystic {
+    box-shadow: 0 10px 30px -10px rgba(184, 134, 11, 0.4);
+}
+
+.ink-text {
+    color: var(--color-ink);
+    font-family: var(--font-serif);
+    line-height: 1.6;
+}
+
+.master-response {
+    font-style: italic;
+    color: var(--color-gold-dim);
+}
+
+.paper-edge {
+    border-style: solid;
+    border-width: 1px;
+    border-image: linear-gradient(to right, transparent, var(--color-gold), transparent) 1;
+}
