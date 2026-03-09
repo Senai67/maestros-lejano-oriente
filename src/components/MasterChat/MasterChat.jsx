@@ -1,12 +1,22 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { librarySearch } from '../../lib/search';
 
-const MasterChat = ({ isOpen, onClose }) => {
+import { volumes } from '../../data/volumes';
+
+const MasterChat = ({ isOpen, onClose, onNavigateToBook }) => {
     const [messages, setMessages] = useState([
-        { role: 'master', text: 'Bienvenido, buscador de la verdad. ¿Qué inquietud trae tu corazón ante la presencia de lo Universal?' }
+        { role: 'master', text: 'Bienvenido, buscador de la verdad. Escribe cualquier palabra o frase y buscararé su rastro en los manuscritos de los Maestros.' }
     ]);
     const [input, setInput] = useState('');
-    const [isTyping, setIsTyping] = useState(false);
+    const [isSearching, setIsSearching] = useState(false);
     const messagesEndRef = useRef(null);
+
+    // Initialize search on first open
+    useEffect(() => {
+        if (isOpen) {
+            librarySearch.init();
+        }
+    }, [isOpen]);
 
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -14,49 +24,67 @@ const MasterChat = ({ isOpen, onClose }) => {
 
     useEffect(() => {
         scrollToBottom();
-    }, [messages, isTyping]);
+    }, [messages, isSearching]);
+
+    const handleJumpToResult = (result) => {
+        const volumeData = volumes.find(v => v.id === parseInt(result.volumeId));
+        if (volumeData && onNavigateToBook) {
+            onNavigateToBook(volumeData, result.id);
+        }
+    };
 
     const handleSend = async () => {
         if (!input.trim()) return;
 
-        const userMsg = { role: 'user', text: input };
+        const query = input;
+        const userMsg = { role: 'user', text: query };
         setMessages(prev => [...prev, userMsg]);
         setInput('');
-        setIsTyping(true);
+        setIsSearching(true);
 
-        // Simulación de respuesta basada en los volúmenes
-        setTimeout(() => {
-            let response = "Medita en el silencio de tu propio ser. Allí, en la Uni-Mente, encontrarás que la respuesta ya te ha sido dada por el Padre.";
-
-            const lowerInput = input.toLowerCase();
-            if (lowerInput.includes('vida')) {
-                response = "La Vida es la pulsación misma de Dios en cada átomo. No hay muerte, solo cambio de forma en la eterna progresión de la luz.";
-            } else if (lowerInput.includes('maestro') || lowerInput.includes('emilio')) {
-                response = "El Maestro Emilio nos enseñó que no hay límites para aquel que reconoce su unidad con la Fuente Creativa.";
-            } else if (lowerInput.includes('himalaya')) {
-                response = "Las montañas del Himalaya son solo el escenario físico de una elevación que debe ocurrir primero en tu conciencia.";
-            } else if (lowerInput.includes('cristo')) {
-                response = "La Conciencia Crística es el estado natural del hombre. Reclama tu herencia como hijo de lo Divino.";
+        try {
+            const results = await librarySearch.search(query);
+            
+            if (results.length === 0) {
+                setMessages(prev => [...prev, { 
+                    role: 'master', 
+                    text: 'El silencio reina. No he encontrado registros exactos de esas palabras en los manuscritos. Intenta buscar con términos más sencillos o raíces de palabras.' 
+                }]);
+            } else {
+                setMessages(prev => [...prev, { 
+                    role: 'master', 
+                    text: `He hallado ecos de tu búsqueda en ${results.length} fragmento${results.length > 1 ? 's' : ''}.`,
+                    results: results
+                }]);
             }
-
-            setMessages(prev => [...prev, { role: 'master', text: response }]);
-            setIsTyping(false);
-        }, 1500);
+        } catch (error) {
+            console.error(error);
+            setMessages(prev => [...prev, { 
+                role: 'master', 
+                text: 'Ha ocurrido una perturbación al ojear los registros. Inténtalo de nuevo.' 
+            }]);
+        } finally {
+            setIsSearching(false);
+        }
     };
 
     if (!isOpen) return null;
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-fade-in">
-            <div className="w-full max-w-lg bg-parchment shadow-mystic rounded-lg overflow-hidden flex flex-col h-[600px] border-2 border-gold/30 paper-edge">
+            <div className="w-full max-w-2xl bg-parchment shadow-mystic rounded-lg overflow-hidden flex flex-col h-[80vh] border-2 border-gold/30 paper-edge">
                 {/* Header */}
                 <div className="bg-parchment-dark/80 px-6 py-4 flex justify-between items-center border-b border-gold/20">
                     <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-full bg-gold/20 flex items-center justify-center border border-gold/40">
-                            <span className="text-gold font-display text-xl">M</span>
+                            <span className="text-gold font-display text-xl">
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                </svg>
+                            </span>
                         </div>
                         <div>
-                            <h3 className="font-display text-gold-dim leading-none">Pregunta al Maestro</h3>
+                            <h3 className="font-display text-gold-dim leading-none">Buscador de Manuscritos</h3>
                             <span className="text-[10px] uppercase tracking-widest text-ink/50">Expedición 1894</span>
                         </div>
                     </div>
@@ -70,24 +98,56 @@ const MasterChat = ({ isOpen, onClose }) => {
                     </button>
                 </div>
 
-                {/* Messages */}
-                <div className="flex-1 overflow-y-auto p-6 space-y-6 scrollbar-hide">
+                {/* Messages & Results */}
+                <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6 scrollbar-hide">
                     {messages.map((msg, idx) => (
-                        <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} animate-fade-in-up`}>
-                            <div className={`max-w-[85%] px-5 py-3 rounded-2xl ${msg.role === 'user'
-                                    ? 'bg-ink text-parchment rounded-tr-none'
-                                    : 'bg-gold/5 text-ink-light rounded-tl-none border border-gold/10'
-                                }`}>
-                                <p className={`text-sm md:text-base ${msg.role === 'master' ? 'master-response' : 'font-serif'}`}>
-                                    {msg.text}
-                                </p>
-                            </div>
+                        <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} animate-fade-in-up w-full`}>
+                            {msg.role === 'user' ? (
+                                <div className="max-w-[85%] px-5 py-3 rounded-2xl bg-ink text-parchment rounded-tr-none">
+                                    <p className="font-serif text-sm md:text-base">{msg.text}</p>
+                                </div>
+                            ) : (
+                                <div className="w-full max-w-full md:max-w-[90%]">
+                                    <div className="px-5 py-3 rounded-2xl bg-gold/5 text-ink-light rounded-tl-none border border-gold/10 inline-block">
+                                        <p className="master-response text-sm md:text-base">{msg.text}</p>
+                                    </div>
+                                    
+                                    {/* Render Search Results */}
+                                    {msg.results && msg.results.length > 0 && (
+                                        <div className="mt-4 space-y-3 pl-2 md:pl-6">
+                                            {msg.results.map((res, resIdx) => (
+                                                <button 
+                                                    key={resIdx} 
+                                                    onClick={() => handleJumpToResult(res)}
+                                                    className="w-full text-left bg-parchment-light border border-gold/20 p-4 rounded shadow-sm relative group hover:border-gold/50 transition-colors"
+                                                >
+                                                    <div className="flex justify-between items-start mb-2">
+                                                        <span className="text-xs font-display tracking-widest uppercase text-gold-dim">
+                                                            Tomo {res.volumeId} • {res.chapterTitle}
+                                                        </span>
+                                                        <span 
+                                                            className="text-xs text-ink/40 group-hover:text-gold flex items-center gap-1 transition-colors"
+                                                            title="Ver libro"
+                                                        >
+                                                            <span>(Ir al texto)</span>
+                                                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
+                                                        </span>
+                                                    </div>
+                                                    <p className="font-serif text-ink italic text-sm md:text-base leading-relaxed">
+                                                        "...{res.preview}..."
+                                                    </p>
+                                                </button>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            )}
                         </div>
                     ))}
-                    {isTyping && (
+                    {isSearching && (
                         <div className="flex justify-start animate-pulse">
                             <div className="bg-gold/5 px-4 py-2 rounded-full border border-gold/10 italic text-xs text-gold-dim">
-                                El Maestro está sintonizando con lo Universal...
+                                Ojeando los registros polvorientos...
                             </div>
                         </div>
                     )}
@@ -102,22 +162,19 @@ const MasterChat = ({ isOpen, onClose }) => {
                             value={input}
                             onChange={(e) => setInput(e.target.value)}
                             onKeyPress={(e) => e.key === 'Enter' && handleSend()}
-                            placeholder="Escribe tu inquietud aquí..."
+                            placeholder="Busca personajes, pueblos, enseñanzas..."
                             className="w-full bg-transparent border-b-2 border-gold/10 focus:border-gold py-3 px-4 pr-12 outline-none font-serif text-ink italic placeholder:text-ink/30 transition-all"
                         />
                         <button
                             onClick={handleSend}
-                            disabled={!input.trim() || isTyping}
+                            disabled={!input.trim() || isSearching}
                             className="absolute right-2 p-2 text-gold hover:text-gold-bright disabled:text-gold/20 transition-colors"
                         >
                             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 19l9-2-9-18-9 18 9 2zm0 0v-8" />
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                             </svg>
                         </button>
                     </div>
-                    <p className="text-[10px] text-center mt-3 text-ink/40 uppercase tracking-tighter">
-                        La sabiduría fluye desde lo invisible
-                    </p>
                 </div>
             </div>
         </div>

@@ -8,21 +8,33 @@ import MasterChat from './components/MasterChat/MasterChat';
 function App() {
   const [selectedVolume, setSelectedVolume] = useState(null);
   const [isChatOpen, setIsChatOpen] = useState(false);
+  const [jumpToParagraph, setJumpToParagraph] = useState(null);
 
-  const handleBookClick = (volume) => {
+  const handleBookClick = (volume, paragraphId = null) => {
     setSelectedVolume(volume);
+    if (paragraphId !== null) {
+        setJumpToParagraph(paragraphId);
+        setIsChatOpen(false); // Close search when jumping to a book
+    } else {
+        setJumpToParagraph(null);
+    }
     // Smooth scroll to top when switching views
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleBack = () => {
     setSelectedVolume(null);
+    setJumpToParagraph(null);
   };
 
   return (
     <MainLayout>
       {selectedVolume ? (
-        <ManuscriptView volume={selectedVolume} onBack={handleBack} />
+        <ManuscriptView 
+            volume={selectedVolume} 
+            onBack={handleBack} 
+            jumpToParagraph={jumpToParagraph}
+        />
       ) : (
         <>
           <HeroSection />
@@ -42,7 +54,11 @@ function App() {
         </svg>
       </button>
 
-      <MasterChat isOpen={isChatOpen} onClose={() => setIsChatOpen(false)} />
+      <MasterChat 
+        isOpen={isChatOpen} 
+        onClose={() => setIsChatOpen(false)} 
+        onNavigateToBook={handleBookClick}
+      />
     </MainLayout>
   );
 }

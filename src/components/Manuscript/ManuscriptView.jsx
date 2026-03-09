@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { jsPDF } from 'jspdf';
 import { LIBROS } from '../../data/libros';
 
-const ManuscriptView = ({ volume, onBack }) => {
+const ManuscriptView = ({ volume, onBack, jumpToParagraph }) => {
     const [isPlaying, setIsPlaying] = useState(false);
     const [currentParagraph, setCurrentParagraph] = useState(0);
     const [isReadingMode, setIsReadingMode] = useState(false);
@@ -71,12 +71,29 @@ const ManuscriptView = ({ volume, onBack }) => {
     useEffect(() => {
         if (!volume) return;
         const savedIdx = localStorage.getItem(`audio_progress_vol_${volume.id}`);
-        if (savedIdx) {
+        if (savedIdx && jumpToParagraph === null) {
             setCurrentParagraph(parseInt(savedIdx, 10));
-        } else {
+        } else if (jumpToParagraph === null) {
             setCurrentParagraph(0);
         }
-    }, [volume]);
+    }, [volume, jumpToParagraph]);
+
+    // Handle jumping to a specific paragraph from search
+    useEffect(() => {
+        if (jumpToParagraph !== null && jumpToParagraph !== undefined) {
+            setIsReadingMode(true);
+            setCurrentParagraph(jumpToParagraph);
+            // Small delay to ensure the reading view is rendered before scrolling
+            setTimeout(() => {
+                if (activeParagraphRef.current) {
+                    activeParagraphRef.current.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'center'
+                    });
+                }
+            }, 100);
+        }
+    }, [jumpToParagraph, isReadingMode]);
 
     // Scroll to active paragraph when it changes in reading mode
     useEffect(() => {
