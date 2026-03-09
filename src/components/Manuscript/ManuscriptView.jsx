@@ -5,7 +5,43 @@ import { LIBROS } from '../../data/libros';
 const ManuscriptView = ({ volume, onBack }) => {
     const [isPlaying, setIsPlaying] = useState(false);
     const [currentParagraph, setCurrentParagraph] = useState(0);
+    const [isReadingMode, setIsReadingMode] = useState(false);
+    const [voices, setVoices] = useState([]);
+    const [selectedVoiceURI, setSelectedVoiceURI] = useState('');
+    
     const isPlayingRef = useRef(false);
+    const activeParagraphRef = useRef(null);
+    const textContainerRef = useRef(null);
+
+    // Initialize voices
+    useEffect(() => {
+        const loadVoices = () => {
+            const availableVoices = window.speechSynthesis.getVoices();
+            if (availableVoices.length > 0) {
+                // Filter for Spanish voices as preference, but expose all just in case
+                const esVoices = availableVoices.filter(v => v.lang.startsWith('es'));
+                const finalVoices = esVoices.length > 0 ? esVoices : availableVoices;
+                
+                setVoices(finalVoices);
+                
+                // Select a default voice 
+                const defaultVoiceURI = localStorage.getItem('selected_voice_uri');
+                if (defaultVoiceURI && finalVoices.some(v => v.voiceURI === defaultVoiceURI)) {
+                    setSelectedVoiceURI(defaultVoiceURI);
+                } else {
+                    setSelectedVoiceURI(finalVoices[0]?.voiceURI || '');
+                }
+            }
+        };
+
+        loadVoices();
+        // Important: in some browsers voices are loaded asynchronously
+        window.speechSynthesis.onvoiceschanged = loadVoices;
+
+        return () => {
+            window.speechSynthesis.onvoiceschanged = null;
+        };
+    }, []);
 
     // Stop speaking when user unmounts or leaves the view
     useEffect(() => {
@@ -24,8 +60,9 @@ const ManuscriptView = ({ volume, onBack }) => {
 
         let paragraphs = [];
         chapters.forEach(ch => {
-            paragraphs.push(ch.title);
-            paragraphs.push(...ch.content.split('\n').filter(p => p.trim() !== ''));
+            paragraphs.push({ type: 'title', text: ch.title });
+            const contentParas = ch.content.split('\n').filter(p => p.trim() !== '');
+            contentParas.forEach(p => paragraphs.push({ type: 'content', text: p }));
         });
         return paragraphs;
     }, [volume]);
@@ -41,6 +78,16 @@ const ManuscriptView = ({ volume, onBack }) => {
         }
     }, [volume]);
 
+    // Scroll to active paragraph when it changes in reading mode
+    useEffect(() => {
+        if (isReadingMode && activeParagraphRef.current) {
+            activeParagraphRef.current.scrollIntoView({
+                behavior: 'smooth',
+                block: 'center'
+            });
+        }
+    }, [currentParagraph, isReadingMode]);
+
     const playNext = (index) => {
         if (!isPlayingRef.current) return;
         if (index >= allParagraphs.length) {
@@ -52,9 +99,17 @@ const ManuscriptView = ({ volume, onBack }) => {
         setCurrentParagraph(index);
         localStorage.setItem(`audio_progress_vol_${volume.id}`, index.toString());
 
-        const utterance = new SpeechSynthesisUtterance(allParagraphs[index]);
+        const utterance = new SpeechSynthesisUtterance(allParagraphs[index].text);
         utterance.lang = 'es-ES';
         utterance.rate = 0.95; // Slightly slower for better reading
+        
+        // Apply selected voice
+        if (selectedVoiceURI) {
+            const voice = voices.find(v => v.voiceURI === selectedVoiceURI);
+            if (voice) {
+                utterance.voice = voice;
+            }
+        }
 
         utterance.onend = () => {
             playNext(index + 1);
@@ -77,9 +132,36 @@ const ManuscriptView = ({ volume, onBack }) => {
             isPlayingRef.current = false;
             setIsPlaying(false);
         } else {
+            setIsReadingMode(true);
             isPlayingRef.current = true;
             setIsPlaying(true);
             playNext(currentParagraph);
+        }
+    };
+
+    const handleVoiceChange = (e) => {
+        const uri = e.target.value;
+        setSelectedVoiceURI(uri);
+        localStorage.setItem('selected_voice_uri', uri);
+        
+        // If it's playing, we need to restart the utterance with the new voice
+        if (isPlayingRef.current) {
+            window.speechSynthesis.cancel();
+            setTimeout(() => {
+                playNext(currentParagraph);
+            }, 100);
+        }
+    };
+
+    const handleParagraphClick = (index) => {
+        if (!isReadingMode) return;
+        setCurrentParagraph(index);
+        localStorage.setItem(`audio_progress_vol_${volume.id}`, index.toString());
+        if (isPlayingRef.current) {
+            window.speechSynthesis.cancel();
+            setTimeout(() => {
+                playNext(index);
+            }, 100);
         }
     };
 
@@ -148,6 +230,93 @@ const ManuscriptView = ({ volume, onBack }) => {
 
     if (!volume) return null;
 
+    if (isReadingMode) {
+        return (
+            <section className="min-h-screen pt-24 pb-12 px-4 md:px-8 bg-parchment animate-fade-in flex flex-col items-center">
+                <div className="w-full max-w-4xl bg-parchment-light shadow-mystic border border-gold/20 rounded-lg overflow-hidden flex flex-col h-[85vh]">
+                    
+                    {/* Toolbar */}
+                    <div className="bg-parchment-dark/80 p-4 flex flex-col md:flex-row justify-between items-center gap-4 border-b border-gold/30 shrink-0">
+                        <button
+                            onClick={() => setIsReadingMode(false)}
+                            className="flex items-center text-ink-light hover:text-gold transition-colors font-display tracking-widest text-sm uppercase"
+                        >
+                            <svg className="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                            </svg>
+                            Volver
+                        </button>
+                        
+                        <div className="flex items-center gap-4 flex-wrap justify-center">
+                            <select 
+                                value={selectedVoiceURI} 
+                                onChange={handleVoiceChange}
+                                className="bg-parchment border border-gold/30 text-ink-light font-serif text-sm px-3 py-1.5 rounded outline-none focus:border-gold max-w-[200px] truncate"
+                            >
+                                {voices.map(v => (
+                                    <option key={v.voiceURI} value={v.voiceURI}>
+                                        {v.name}
+                                    </option>
+                                ))}
+                            </select>
+
+                            <button 
+                                onClick={handleListenToggle}
+                                className={`px-4 py-1.5 font-display tracking-widest transition-colors flex items-center gap-2 rounded text-sm ${
+                                    isPlaying 
+                                        ? 'bg-red-800 text-parchment hover:bg-red-900 border border-transparent' 
+                                        : 'bg-gold text-parchment hover:bg-gold-dim border border-transparent'
+                                }`}
+                            >
+                                {isPlaying ? "Pausar" : "Reanudar"}
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Progress Bar */}
+                    <div className="w-full h-1 bg-ink/5 shrink-0">
+                        <div 
+                            className="h-full bg-gold transition-all duration-300 ease-out"
+                            style={{ width: `${allParagraphs.length > 0 ? (currentParagraph / (allParagraphs.length - 1)) * 100 : 0}%` }}
+                        ></div>
+                    </div>
+
+                    {/* Text Container */}
+                    <div 
+                        ref={textContainerRef}
+                        className="p-6 md:p-12 overflow-y-auto grow space-y-6 md:space-y-8 scroll-smooth"
+                    >
+                        {allParagraphs.map((para, idx) => {
+                            const isActive = idx === currentParagraph;
+                            return (
+                                <div 
+                                    key={idx} 
+                                    ref={isActive ? activeParagraphRef : null}
+                                    onClick={() => handleParagraphClick(idx)}
+                                    className={`transition-colors duration-300 p-4 rounded cursor-pointer ${
+                                        isActive 
+                                            ? 'bg-gold/15 border-l-4 border-gold shadow-sm' 
+                                            : 'hover:bg-ink/5 border-l-4 border-transparent'
+                                    }`}
+                                >
+                                    {para.type === 'title' ? (
+                                        <h2 className={`font-display text-2xl md:text-3xl text-ink ${isActive ? 'text-gold-dim' : ''}`}>
+                                            {para.text}
+                                        </h2>
+                                    ) : (
+                                        <p className={`font-serif text-lg md:text-xl leading-relaxed ${isActive ? 'text-ink' : 'text-ink-light'}`}>
+                                            {para.text}
+                                        </p>
+                                    )}
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+            </section>
+        );
+    }
+
     return (
         <section className="min-h-screen py-24 px-6 md:px-12 bg-parchment relative animate-fade-in">
             <div className="max-w-6xl mx-auto">
@@ -196,12 +365,12 @@ const ManuscriptView = ({ volume, onBack }) => {
                                     {isPlaying ? (
                                         <>
                                             <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zM7 8a1 1 0 012 0v4a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v4a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" /></svg>
-                                            Pausar Sabiduría
+                                            Leer Manuscrito
                                         </>
                                     ) : (
                                         <>
                                             <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd" /></svg>
-                                            Escuchar Sabiduría
+                                            Leer Manuscrito
                                         </>
                                     )}
                                 </button>
