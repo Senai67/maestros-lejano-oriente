@@ -280,8 +280,8 @@ const ManuscriptView = ({ volume, onBack, jumpToParagraph }) => {
                             <button
                                 onClick={handleListenToggle}
                                 className={`px-4 py-1.5 font-display tracking-widest transition-colors flex items-center gap-2 rounded text-sm ${isPlaying
-                                        ? 'bg-red-800 text-parchment hover:bg-red-900 border border-transparent'
-                                        : 'bg-gold text-parchment hover:bg-gold-dim border border-transparent'
+                                    ? 'bg-red-800 text-parchment hover:bg-red-900 border border-transparent'
+                                    : 'bg-gold text-parchment hover:bg-gold-dim border border-transparent'
                                     }`}
                             >
                                 {isPlaying ? "Pausar" : "Reanudar"}
@@ -310,8 +310,8 @@ const ManuscriptView = ({ volume, onBack, jumpToParagraph }) => {
                                     ref={isActive ? activeParagraphRef : null}
                                     onClick={() => handleParagraphClick(idx)}
                                     className={`transition-colors duration-300 p-4 rounded cursor-pointer ${isActive
-                                            ? 'bg-gold/15 border-l-4 border-gold shadow-sm'
-                                            : 'hover:bg-ink/5 border-l-4 border-transparent'
+                                        ? 'bg-gold/15 border-l-4 border-gold shadow-sm'
+                                        : 'hover:bg-ink/5 border-l-4 border-transparent'
                                         }`}
                                 >
                                     {para.type === 'title' ? (
@@ -333,12 +333,12 @@ const ManuscriptView = ({ volume, onBack, jumpToParagraph }) => {
     }
 
     return (
-        <section className="min-h-screen py-24 px-6 md:px-12 bg-parchment relative animate-fade-in">
+        <section className="min-h-screen pt-8 pb-24 lg:py-24 px-6 md:px-12 bg-parchment relative animate-fade-in">
             <div className="max-w-6xl mx-auto">
                 {/* Navigation */}
                 <button
                     onClick={onBack}
-                    className="mb-12 flex items-center text-ink-light hover:text-gold transition-colors group"
+                    className="mb-8 lg:mb-12 flex items-center text-ink-light hover:text-gold transition-colors group"
                 >
                     <svg className="w-6 h-6 mr-2 transform group-hover:-translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
@@ -348,11 +348,11 @@ const ManuscriptView = ({ volume, onBack, jumpToParagraph }) => {
 
                 {/* Content Header */}
                 <div className="flex flex-col lg:grid lg:grid-cols-12 gap-12 mb-16">
-                    <div className="lg:col-span-4 perspective-1000 order-2 lg:order-none mt-8 lg:mt-0">
+                    <div className="lg:col-span-4 perspective-1000 order-2 lg:order-none mt-4 lg:mt-0 flex justify-center">
                         {/* Large Book Cover Representation */}
-                        <div className="w-full aspect-[2/3] rounded-sm bg-[#5D4037] relative shadow-2xl transform rotate-y-12">
+                        <div className="w-full max-w-[200px] lg:max-w-none aspect-[2/3] rounded-sm bg-[#5D4037] relative shadow-2xl transform rotate-y-12">
                             <div className="absolute inset-4 border border-gold/30"></div>
-                            <div className="absolute inset-0 flex items-center justify-center text-gold-bright font-display text-4xl text-center p-8">
+                            <div className="absolute inset-0 flex items-center justify-center text-gold-bright font-display text-2xl lg:text-4xl text-center p-8">
                                 {volume.title}
                             </div>
                         </div>
@@ -372,8 +372,8 @@ const ManuscriptView = ({ volume, onBack, jumpToParagraph }) => {
                                 <button
                                     onClick={handleListenToggle}
                                     className={`px-8 py-3 font-display tracking-widest transition-colors shadow-lg flex items-center gap-2 ${isPlaying
-                                            ? 'bg-red-800 text-parchment hover:bg-red-900'
-                                            : 'bg-gold text-parchment hover:bg-gold-dim'
+                                        ? 'bg-red-800 text-parchment hover:bg-red-900'
+                                        : 'bg-gold text-parchment hover:bg-gold-dim'
                                         }`}
                                 >
                                     {isPlaying ? (
