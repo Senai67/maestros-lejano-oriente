@@ -1,11 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { librarySearch } from '../../lib/search';
-
 import { volumes } from '../../data/volumes';
 
 const MasterChat = ({ isOpen, onClose, onNavigateToBook }) => {
     const [messages, setMessages] = useState([
-        { role: 'master', text: 'Bienvenido, buscador de la verdad. Escribe cualquier palabra o frase y buscararé su rastro en los manuscritos de los Maestros.' }
+        { role: 'master', text: 'Bienvenido, buscador de la verdad. Escribe cualquier palabra o frase y buscaré su rastro en los manuscritos de los Maestros.' }
     ]);
     const [input, setInput] = useState('');
     const [isSearching, setIsSearching] = useState(false);
@@ -14,7 +13,6 @@ const MasterChat = ({ isOpen, onClose, onNavigateToBook }) => {
     // Initialize search on first open
     useEffect(() => {
         if (isOpen) {
-            // init() is synchronous, but we call it here to pre-build the index
             setTimeout(() => librarySearch.init(), 0);
         }
     }, [isOpen]);
@@ -30,8 +28,16 @@ const MasterChat = ({ isOpen, onClose, onNavigateToBook }) => {
     const handleJumpToResult = (result) => {
         const volumeData = volumes.find(v => v.id === parseInt(result.volumeId));
         if (volumeData && onNavigateToBook) {
-            onNavigateToBook(volumeData, result.id);
+            // Pass the paragraph index within the volume, not the global search ID
+            onNavigateToBook(volumeData, result.paragraphIndex);
         }
+    };
+
+    const handleClearSearch = () => {
+        setMessages([
+            { role: 'master', text: 'Bienvenido, buscador de la verdad. Escribe cualquier palabra o frase y buscaré su rastro en los manuscritos de los Maestros.' }
+        ]);
+        setInput('');
     };
 
     const handleSend = () => {
@@ -89,14 +95,26 @@ const MasterChat = ({ isOpen, onClose, onNavigateToBook }) => {
                             <span className="text-[10px] uppercase tracking-widest text-ink/50">Expedición 1894</span>
                         </div>
                     </div>
-                    <button
-                        onClick={onClose}
-                        className="text-ink/40 hover:text-ink transition-colors"
-                    >
-                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                    </button>
+                    <div className="flex items-center gap-2">
+                        <button
+                            onClick={handleClearSearch}
+                            className="text-ink/40 hover:text-gold transition-colors p-2"
+                            title="Limpiar búsqueda"
+                        >
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                            </svg>
+                        </button>
+                        <button
+                            onClick={onClose}
+                            className="text-ink/40 hover:text-ink transition-colors p-2"
+                            title="Cerrar"
+                        >
+                            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                    </div>
                 </div>
 
                 {/* Messages & Results */}

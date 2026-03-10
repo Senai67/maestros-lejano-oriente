@@ -80,10 +80,10 @@ const ManuscriptView = ({ volume, onBack, jumpToParagraph }) => {
 
     // Handle jumping to a specific paragraph from search
     useEffect(() => {
-        if (jumpToParagraph !== null && jumpToParagraph !== undefined) {
+        if (jumpToParagraph !== null && jumpToParagraph !== undefined && allParagraphs.length > 0) {
             setIsReadingMode(true);
             setCurrentParagraph(jumpToParagraph);
-            // Small delay to ensure the reading view is rendered before scrolling
+            // Delay to ensure the reading view is rendered before scrolling
             setTimeout(() => {
                 if (activeParagraphRef.current) {
                     activeParagraphRef.current.scrollIntoView({
@@ -91,9 +91,9 @@ const ManuscriptView = ({ volume, onBack, jumpToParagraph }) => {
                         block: 'center'
                     });
                 }
-            }, 100);
+            }, 150);
         }
-    }, [jumpToParagraph, isReadingMode]);
+    }, [jumpToParagraph, allParagraphs.length, isReadingMode]);
 
     // Scroll to active paragraph when it changes in reading mode
     useEffect(() => {
@@ -255,13 +255,18 @@ const ManuscriptView = ({ volume, onBack, jumpToParagraph }) => {
                     {/* Toolbar */}
                     <div className="bg-parchment-dark/80 p-4 flex flex-col md:flex-row justify-between items-center gap-4 border-b border-gold/30 shrink-0">
                         <button
-                            onClick={() => setIsReadingMode(false)}
+                            onClick={() => {
+                                window.speechSynthesis.cancel();
+                                isPlayingRef.current = false;
+                                setIsPlaying(false);
+                                onBack();
+                            }}
                             className="flex items-center text-ink-light hover:text-gold transition-colors font-display tracking-widest text-sm uppercase"
                         >
                             <svg className="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
                             </svg>
-                            Volver
+                            Volver a la Biblioteca
                         </button>
 
                         <div className="flex items-center gap-4 flex-wrap justify-center">
