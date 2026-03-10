@@ -1,84 +1,73 @@
-import { Document } from 'flexsearch';
 import { LIBROS } from '../data/libros';
+
+// Normalizes a text: lowercase, remove accents 
+function normalize(text) {
+    return text
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '');
+}
 
 class SearchEngine {
     constructor() {
-        this.index = new Document({
-            document: {
-                id: 'id',
-                index: ['content', 'title'],
-                store: ['bookTitle', 'volumeId', 'chapterTitle', 'content', 'preview']
-            },
-            tokenize: 'full',
-            resolution: 9,
-            async: true
-        });
+        this.paragraphs = [];
         this.isIndexed = false;
-        this.isIndexing = false;
     }
 
-    async init() {
-        if (this.isIndexed || this.isIndexing) return;
-        this.isIndexing = true;
-        
-        console.log("Building search index... (This might take a moment)");
-        let globalId = 0;
+    init() {
+        if (this.isIndexed) return;
+
+        console.log('Building search index...');
 
         for (const [bookKey, chapters] of Object.entries(LIBROS)) {
-            // Extract volume from "Vida y Enseñanzas de los Maestros X"
             const volumeMatch = bookKey.match(/Maestros (\d+)/i);
             const volumeId = volumeMatch ? volumeMatch[1] : '';
 
             for (const chapter of chapters) {
-                // Split chapter content into reasonable chunks (paragraphs)
-                const paragraphs = chapter.content.split('\n').filter(p => p.trim() !== '');
-                
+                const paragraphs = chapter.content.split('\n').filter(p => p.trim().length > 20);
+
                 for (let i = 0; i < paragraphs.length; i++) {
                     const para = paragraphs[i];
-                    
-                    if (para.length < 20) continue; // Skip very short garbled lines
-                    
-                    await this.index.addAsync({
-                        id: globalId++,
+                    this.paragraphs.push({
+                        id: this.paragraphs.length,
                         bookTitle: bookKey,
-                        volumeId: volumeId,
+                        volumeId,
                         chapterTitle: chapter.title,
                         content: para,
+                        normalizedContent: normalize(para),
                         preview: para.substring(0, 150) + (para.length > 150 ? '...' : '')
                     });
                 }
             }
         }
-        
+
         this.isIndexed = true;
-        this.isIndexing = false;
-        console.log("Search index built successfully.");
+        console.log(`Search index built: ${this.paragraphs.length} paragraphs indexed.`);
     }
 
-    async search(query) {
+    search(query) {
         if (!this.isIndexed) {
-            await this.init();
+            this.init();
         }
 
-        const rawResults = await this.index.searchAsync(query, {
-            enrich: true,
-            limit: 20
+        if (!query || query.trim() === '') return [];
+
+        const terms = normalize(query).split(/\s+/).filter(t => t.length > 2);
+        if (terms.length === 0) return [];
+
+        const results = this.paragraphs.filter(para => {
+            // All terms must appear in the paragraph
+            return terms.every(term => para.normalizedContent.includes(term));
         });
 
-        if (!rawResults || rawResults.length === 0) return [];
-
-        // FlexSearch returns results grouped by index field. We want to flatten and deduplicate.
-        const deduplicatedResults = new Map();
-
-        rawResults.forEach(fieldResult => {
-            fieldResult.result.forEach(item => {
-                if (!deduplicatedResults.has(item.id)) {
-                    deduplicatedResults.set(item.id, item.doc);
-                }
-            });
+        // Sort by number of matching terms (more matches = more relevant)
+        results.sort((a, b) => {
+            const aScore = terms.reduce((acc, term) => acc + (a.normalizedContent.split(term).length - 1), 0);
+            const bScore = terms.reduce((acc, term) => acc + (b.normalizedContent.split(term).length - 1), 0);
+            return bScore - aScore;
         });
 
-        return Array.from(deduplicatedResults.values());
+        return results.slice(0, 20);
     }
 }
 

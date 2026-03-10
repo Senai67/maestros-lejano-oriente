@@ -14,7 +14,8 @@ const MasterChat = ({ isOpen, onClose, onNavigateToBook }) => {
     // Initialize search on first open
     useEffect(() => {
         if (isOpen) {
-            librarySearch.init();
+            // init() is synchronous, but we call it here to pre-build the index
+            setTimeout(() => librarySearch.init(), 0);
         }
     }, [isOpen]);
 
@@ -33,7 +34,7 @@ const MasterChat = ({ isOpen, onClose, onNavigateToBook }) => {
         }
     };
 
-    const handleSend = async () => {
+    const handleSend = () => {
         if (!input.trim()) return;
 
         const query = input;
@@ -43,25 +44,25 @@ const MasterChat = ({ isOpen, onClose, onNavigateToBook }) => {
         setIsSearching(true);
 
         try {
-            const results = await librarySearch.search(query);
-            
+            const results = librarySearch.search(query);
+
             if (results.length === 0) {
-                setMessages(prev => [...prev, { 
-                    role: 'master', 
-                    text: 'El silencio reina. No he encontrado registros exactos de esas palabras en los manuscritos. Intenta buscar con términos más sencillos o raíces de palabras.' 
+                setMessages(prev => [...prev, {
+                    role: 'master',
+                    text: 'El silencio reina. No he encontrado registros exactos de esas palabras en los manuscritos. Intenta buscar con términos más sencillos o raíces de palabras.'
                 }]);
             } else {
-                setMessages(prev => [...prev, { 
-                    role: 'master', 
+                setMessages(prev => [...prev, {
+                    role: 'master',
                     text: `He hallado ecos de tu búsqueda en ${results.length} fragmento${results.length > 1 ? 's' : ''}.`,
                     results: results
                 }]);
             }
         } catch (error) {
             console.error(error);
-            setMessages(prev => [...prev, { 
-                role: 'master', 
-                text: 'Ha ocurrido una perturbación al ojear los registros. Inténtalo de nuevo.' 
+            setMessages(prev => [...prev, {
+                role: 'master',
+                text: 'Ha ocurrido una perturbación al ojear los registros. Inténtalo de nuevo.'
             }]);
         } finally {
             setIsSearching(false);
@@ -111,13 +112,13 @@ const MasterChat = ({ isOpen, onClose, onNavigateToBook }) => {
                                     <div className="px-5 py-3 rounded-2xl bg-gold/5 text-ink-light rounded-tl-none border border-gold/10 inline-block">
                                         <p className="master-response text-sm md:text-base">{msg.text}</p>
                                     </div>
-                                    
+
                                     {/* Render Search Results */}
                                     {msg.results && msg.results.length > 0 && (
                                         <div className="mt-4 space-y-3 pl-2 md:pl-6">
                                             {msg.results.map((res, resIdx) => (
-                                                <button 
-                                                    key={resIdx} 
+                                                <button
+                                                    key={resIdx}
                                                     onClick={() => handleJumpToResult(res)}
                                                     className="w-full text-left bg-parchment-light border border-gold/20 p-4 rounded shadow-sm relative group hover:border-gold/50 transition-colors"
                                                 >
@@ -125,7 +126,7 @@ const MasterChat = ({ isOpen, onClose, onNavigateToBook }) => {
                                                         <span className="text-xs font-display tracking-widest uppercase text-gold-dim">
                                                             Tomo {res.volumeId} • {res.chapterTitle}
                                                         </span>
-                                                        <span 
+                                                        <span
                                                             className="text-xs text-ink/40 group-hover:text-gold flex items-center gap-1 transition-colors"
                                                             title="Ver libro"
                                                         >
