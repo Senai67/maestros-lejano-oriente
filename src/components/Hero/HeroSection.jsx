@@ -50,7 +50,7 @@ const HeroSection = () => {
 
             <div className="relative z-10 max-w-5xl mx-auto space-y-6 animate-fade-in-up mt-8 transform -translate-y-1/4">
                 <div className="text-gold-dim font-display tracking-[0.3em] text-xs md:text-sm uppercase">
-                    Archivo Confidencial No. 1894
+                    ARCHIVOS DE LA EXPEDICIÓN DE 1894
                 </div>
 
                 <h1 className="font-display font-semibold text-ink leading-tight drop-shadow-sm w-full max-w-full mx-auto uppercase px-4 text-center">
