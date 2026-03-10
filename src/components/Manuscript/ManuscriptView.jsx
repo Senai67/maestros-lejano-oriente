@@ -8,7 +8,7 @@ const ManuscriptView = ({ volume, onBack, jumpToParagraph }) => {
     const [isReadingMode, setIsReadingMode] = useState(false);
     const [voices, setVoices] = useState([]);
     const [selectedVoiceURI, setSelectedVoiceURI] = useState('');
-    
+
     const isPlayingRef = useRef(false);
     const activeParagraphRef = useRef(null);
     const textContainerRef = useRef(null);
@@ -21,9 +21,9 @@ const ManuscriptView = ({ volume, onBack, jumpToParagraph }) => {
                 // Filter for Spanish voices as preference, but expose all just in case
                 const esVoices = availableVoices.filter(v => v.lang.startsWith('es'));
                 const finalVoices = esVoices.length > 0 ? esVoices : availableVoices;
-                
+
                 setVoices(finalVoices);
-                
+
                 // Select a default voice 
                 const defaultVoiceURI = localStorage.getItem('selected_voice_uri');
                 if (defaultVoiceURI && finalVoices.some(v => v.voiceURI === defaultVoiceURI)) {
@@ -119,7 +119,7 @@ const ManuscriptView = ({ volume, onBack, jumpToParagraph }) => {
         const utterance = new SpeechSynthesisUtterance(allParagraphs[index].text);
         utterance.lang = 'es-ES';
         utterance.rate = 0.95; // Slightly slower for better reading
-        
+
         // Apply selected voice
         if (selectedVoiceURI) {
             const voice = voices.find(v => v.voiceURI === selectedVoiceURI);
@@ -143,7 +143,7 @@ const ManuscriptView = ({ volume, onBack, jumpToParagraph }) => {
 
     const handleListenToggle = () => {
         if (!window.speechSynthesis) return alert("Tu navegador no soporta lectura por voz.");
-        
+
         if (isPlayingRef.current) {
             window.speechSynthesis.cancel();
             isPlayingRef.current = false;
@@ -160,7 +160,7 @@ const ManuscriptView = ({ volume, onBack, jumpToParagraph }) => {
         const uri = e.target.value;
         setSelectedVoiceURI(uri);
         localStorage.setItem('selected_voice_uri', uri);
-        
+
         // If it's playing, we need to restart the utterance with the new voice
         if (isPlayingRef.current) {
             window.speechSynthesis.cancel();
@@ -193,7 +193,7 @@ const ManuscriptView = ({ volume, onBack, jumpToParagraph }) => {
     const handleDownloadPDF = () => {
         const bookKey = `Vida y Enseñanzas de los Maestros ${volume.id}`;
         const chapters = LIBROS[bookKey];
-        
+
         if (!chapters || chapters.length === 0) {
             alert("No hay contenido disponible para este volumen aún.");
             return;
@@ -204,7 +204,7 @@ const ManuscriptView = ({ volume, onBack, jumpToParagraph }) => {
         const pageHeight = 280;
 
         doc.setFont("times", "normal");
-        
+
         // Título del Libro
         doc.setFontSize(22);
         doc.text(volume.title, 20, currentY);
@@ -218,17 +218,17 @@ const ManuscriptView = ({ volume, onBack, jumpToParagraph }) => {
 
             doc.setFontSize(16);
             doc.setFont("times", "bold");
-            
+
             const chapterTitleLines = doc.splitTextToSize(chapter.title, 170);
             chapterTitleLines.forEach(line => {
                 if (currentY > pageHeight - 10) { doc.addPage(); currentY = 20; }
                 doc.text(line, 20, currentY);
                 currentY += 10;
             });
-            
+
             doc.setFontSize(12);
             doc.setFont("times", "normal");
-            
+
             const contentLines = doc.splitTextToSize(chapter.content, 170);
             contentLines.forEach(line => {
                 if (currentY > pageHeight - 10) {
@@ -238,7 +238,7 @@ const ManuscriptView = ({ volume, onBack, jumpToParagraph }) => {
                 doc.text(line, 20, currentY);
                 currentY += 6;
             });
-            
+
             currentY += 10; // Extra space after a chapter
         });
 
@@ -251,7 +251,7 @@ const ManuscriptView = ({ volume, onBack, jumpToParagraph }) => {
         return (
             <section className="min-h-screen pt-24 pb-12 px-4 md:px-8 bg-parchment animate-fade-in flex flex-col items-center">
                 <div className="w-full max-w-4xl bg-parchment-light shadow-mystic border border-gold/20 rounded-lg overflow-hidden flex flex-col h-[85vh]">
-                    
+
                     {/* Toolbar */}
                     <div className="bg-parchment-dark/80 p-4 flex flex-col md:flex-row justify-between items-center gap-4 border-b border-gold/30 shrink-0">
                         <button
@@ -263,10 +263,10 @@ const ManuscriptView = ({ volume, onBack, jumpToParagraph }) => {
                             </svg>
                             Volver
                         </button>
-                        
+
                         <div className="flex items-center gap-4 flex-wrap justify-center">
-                            <select 
-                                value={selectedVoiceURI} 
+                            <select
+                                value={selectedVoiceURI}
                                 onChange={handleVoiceChange}
                                 className="bg-parchment border border-gold/30 text-ink-light font-serif text-sm px-3 py-1.5 rounded outline-none focus:border-gold max-w-[200px] truncate"
                             >
@@ -277,13 +277,12 @@ const ManuscriptView = ({ volume, onBack, jumpToParagraph }) => {
                                 ))}
                             </select>
 
-                            <button 
+                            <button
                                 onClick={handleListenToggle}
-                                className={`px-4 py-1.5 font-display tracking-widest transition-colors flex items-center gap-2 rounded text-sm ${
-                                    isPlaying 
-                                        ? 'bg-red-800 text-parchment hover:bg-red-900 border border-transparent' 
+                                className={`px-4 py-1.5 font-display tracking-widest transition-colors flex items-center gap-2 rounded text-sm ${isPlaying
+                                        ? 'bg-red-800 text-parchment hover:bg-red-900 border border-transparent'
                                         : 'bg-gold text-parchment hover:bg-gold-dim border border-transparent'
-                                }`}
+                                    }`}
                             >
                                 {isPlaying ? "Pausar" : "Reanudar"}
                             </button>
@@ -292,29 +291,28 @@ const ManuscriptView = ({ volume, onBack, jumpToParagraph }) => {
 
                     {/* Progress Bar */}
                     <div className="w-full h-1 bg-ink/5 shrink-0">
-                        <div 
+                        <div
                             className="h-full bg-gold transition-all duration-300 ease-out"
                             style={{ width: `${allParagraphs.length > 0 ? (currentParagraph / (allParagraphs.length - 1)) * 100 : 0}%` }}
                         ></div>
                     </div>
 
                     {/* Text Container */}
-                    <div 
+                    <div
                         ref={textContainerRef}
                         className="p-6 md:p-12 overflow-y-auto grow space-y-6 md:space-y-8 scroll-smooth"
                     >
                         {allParagraphs.map((para, idx) => {
                             const isActive = idx === currentParagraph;
                             return (
-                                <div 
-                                    key={idx} 
+                                <div
+                                    key={idx}
                                     ref={isActive ? activeParagraphRef : null}
                                     onClick={() => handleParagraphClick(idx)}
-                                    className={`transition-colors duration-300 p-4 rounded cursor-pointer ${
-                                        isActive 
-                                            ? 'bg-gold/15 border-l-4 border-gold shadow-sm' 
+                                    className={`transition-colors duration-300 p-4 rounded cursor-pointer ${isActive
+                                            ? 'bg-gold/15 border-l-4 border-gold shadow-sm'
                                             : 'hover:bg-ink/5 border-l-4 border-transparent'
-                                    }`}
+                                        }`}
                                 >
                                     {para.type === 'title' ? (
                                         <h2 className={`font-display text-2xl md:text-3xl text-ink ${isActive ? 'text-gold-dim' : ''}`}>
@@ -349,8 +347,8 @@ const ManuscriptView = ({ volume, onBack, jumpToParagraph }) => {
                 </button>
 
                 {/* Content Header */}
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 mb-16">
-                    <div className="lg:col-span-4 perspective-1000">
+                <div className="flex flex-col lg:grid lg:grid-cols-12 gap-12 mb-16">
+                    <div className="lg:col-span-4 perspective-1000 order-2 lg:order-none mt-8 lg:mt-0">
                         {/* Large Book Cover Representation */}
                         <div className="w-full aspect-[2/3] rounded-sm bg-[#5D4037] relative shadow-2xl transform rotate-y-12">
                             <div className="absolute inset-4 border border-gold/30"></div>
@@ -360,8 +358,8 @@ const ManuscriptView = ({ volume, onBack, jumpToParagraph }) => {
                         </div>
                     </div>
 
-                    <div className="lg:col-span-8 space-y-8">
-                        <h1 className="font-display text-5xl md:text-6xl text-ink leading-tight">
+                    <div className="lg:col-span-8 space-y-8 order-1 lg:order-none">
+                        <h1 className="font-display text-4xl md:text-5xl lg:text-6xl text-ink leading-tight">
                             {volume.title}
                         </h1>
                         <div className="h-px w-24 bg-gold"></div>
@@ -371,13 +369,12 @@ const ManuscriptView = ({ volume, onBack, jumpToParagraph }) => {
 
                         <div className="flex flex-col sm:flex-row flex-wrap gap-4 mt-8">
                             <div className="flex items-center gap-2">
-                                <button 
+                                <button
                                     onClick={handleListenToggle}
-                                    className={`px-8 py-3 font-display tracking-widest transition-colors shadow-lg flex items-center gap-2 ${
-                                        isPlaying 
-                                            ? 'bg-red-800 text-parchment hover:bg-red-900' 
+                                    className={`px-8 py-3 font-display tracking-widest transition-colors shadow-lg flex items-center gap-2 ${isPlaying
+                                            ? 'bg-red-800 text-parchment hover:bg-red-900'
                                             : 'bg-gold text-parchment hover:bg-gold-dim'
-                                    }`}
+                                        }`}
                                 >
                                     {isPlaying ? (
                                         <>
@@ -392,7 +389,7 @@ const ManuscriptView = ({ volume, onBack, jumpToParagraph }) => {
                                     )}
                                 </button>
                                 {currentParagraph > 0 && (
-                                    <button 
+                                    <button
                                         onClick={handleResetAudio}
                                         title="Reiniciar lectura desde el principio"
                                         className="p-3 border border-ink/20 text-ink/60 hover:text-ink hover:border-gold transition-colors"
@@ -402,7 +399,7 @@ const ManuscriptView = ({ volume, onBack, jumpToParagraph }) => {
                                 )}
                             </div>
 
-                            <button 
+                            <button
                                 onClick={handleDownloadPDF}
                                 className="px-8 py-3 border border-ink/20 text-ink font-display tracking-widest hover:border-gold hover:text-gold transition-colors flex items-center justify-center gap-2"
                             >
@@ -410,7 +407,7 @@ const ManuscriptView = ({ volume, onBack, jumpToParagraph }) => {
                                 Descargar Manuscrito
                             </button>
                         </div>
-                        
+
                         {(currentParagraph > 0 || isPlaying) && (
                             <div className="mt-4 text-sm font-serif text-ink/60 italic">
                                 {/* Visual cue of progress */}
