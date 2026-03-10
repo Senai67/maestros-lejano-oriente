@@ -54,7 +54,7 @@ const HeroSection = () => {
                 </div>
 
                 <h1 className="font-display font-semibold text-ink leading-tight drop-shadow-sm w-full max-w-full mx-auto uppercase px-4 text-center">
-                    <span className="block text-xl md:text-3xl lg:text-4xl xl:text-5xl whitespace-nowrap">VIDA Y ENSEÑANZAS DE LOS MAESTROS</span>
+                    <span className="block text-2xl md:text-3xl lg:text-4xl xl:text-5xl">VIDA Y ENSEÑANZAS DE LOS MAESTROS</span>
                     <span className="text-gold-dim block mt-2 text-xl md:text-3xl lg:text-4xl xl:text-5xl">DEL LEJANO ORIENTE</span>
                 </h1>
 
